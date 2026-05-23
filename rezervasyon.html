@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="tr" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+  <title>Atölye Bileti & Rezervasyon | Artemis Cafe</title>
+  <meta name="description" content="Artemis Cafe atölye bileti satın alın. Yağlıboya, suluboya, karakalem ve seramik atölyeleri için online rezervasyon ve güvenli ödeme." />
+  <meta name="robots" content="noindex, follow" />
+  <meta name="theme-color" content="#123b30" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind (v4 browser build) - jsdelivr, mobilde güvenilir -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+  <style>
+    :root {
+      --art-bg:      #123b30;
+      --art-surface: #16463a;
+      --art-elev:    #1a5145;
+      --art-gold:    #c5a55e;
+      --art-amber:   #d8bd7a;
+      --art-cream:   #f4efea;
+      --art-muted:   #9fb0a4;
+      --art-border:  #2b5a4c;
+    }
+
+    html, body { background-color: #123b30; }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      color: #f4efea;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    .font-display { font-family: 'Fraunces', serif; font-optical-sizing: auto; }
+
+    /* Grain & vignette */
+    .grain::before {
+      content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 1;
+      opacity: 0.06; mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.9'/></svg>");
+    }
+    .vignette::after {
+      content:""; position:fixed; inset:0; pointer-events:none; z-index:2;
+      background: radial-gradient(ellipse at 50% 30%, rgba(197,165,94,0.06), transparent 55%),
+                  radial-gradient(ellipse at 80% 90%, rgba(197,165,94,0.05), transparent 60%);
+    }
+
+    /* Reveal */
+    .reveal { opacity:0; transform: translateY(20px); transition: opacity 700ms cubic-bezier(.22,.61,.36,1), transform 700ms cubic-bezier(.22,.61,.36,1); }
+    .reveal.in-view { opacity:1; transform: translateY(0); }
+    .reveal-delay-1 { transition-delay: 80ms; }
+    .reveal-delay-2 { transition-delay: 160ms; }
+
+    /* Nav blur */
+    .nav-glass {
+      background: rgba(18, 59, 48, 0.55);
+      backdrop-filter: saturate(140%) blur(14px);
+      -webkit-backdrop-filter: saturate(140%) blur(14px);
+    }
+
+    /* Selection */
+    ::selection { background: var(--art-gold); color: #123b30; }
+
+    /* Workshop & payment selection states (:has() supported in all modern browsers) */
+    .workshop-option:has(input:checked) {
+      border-color: rgba(197,165,94,0.7);
+      background: linear-gradient(180deg, rgba(197,165,94,0.06), rgba(197,165,94,0.02));
+      box-shadow: 0 0 0 1px rgba(197,165,94,0.3), 0 20px 40px -20px rgba(0,0,0,0.5);
+    }
+    .workshop-option { transition: border-color .3s ease, background .3s ease, box-shadow .3s ease; }
+    .payment-option:has(input:checked) {
+      border-color: rgba(197,165,94,0.7);
+      background: rgba(197,165,94,0.05);
+    }
+    .payment-option { transition: border-color .25s ease, background .25s ease; }
+
+    /* Inputs */
+    .field-input {
+      width: 100%;
+      background: #16463a;
+      border: 1px solid #2b5a4c;
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: #f4efea;
+      font-size: 15px;
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    .field-input::placeholder { color: rgba(159,176,164,0.7); }
+    .field-input:focus {
+      outline: none;
+      border-color: #c5a55e;
+      box-shadow: 0 0 0 3px rgba(197,165,94,0.15);
+    }
+    .field-input:invalid:not(:placeholder-shown) { border-color: rgba(220,120,120,0.6); }
+
+    /* Quantity stepper */
+    .qty-btn {
+      width: 44px; height: 44px;
+      display: grid; place-items: center;
+      background: #16463a;
+      border: 1px solid #2b5a4c;
+      border-radius: 12px;
+      color: #f4efea;
+      font-size: 20px; line-height: 1;
+      cursor: pointer;
+      transition: border-color .2s ease, background .2s ease;
+    }
+    .qty-btn:hover { border-color: #c5a55e; }
+    .qty-btn:active { background: #1a5145; }
+    .qty-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%) translateY(120px);
+      background: #16463a;
+      border: 1px solid #c5a55e;
+      color: #f4efea;
+      padding: 14px 22px;
+      border-radius: 999px;
+      box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
+      z-index: 100;
+      transition: transform .5s cubic-bezier(.22,.61,.36,1);
+      max-width: 90%;
+      font-size: 14px;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* Mobile menu */
+    .mobile-menu { transition: transform 480ms cubic-bezier(.22,.61,.36,1), opacity 320ms ease; }
+    .mobile-menu.hidden-menu { transform: translateY(-12px); opacity: 0; pointer-events: none; }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity:1; transform:none; transition:none; }
+    }
+  </style>
+</head>
+<body class="grain vignette antialiased">
+
+  <!-- ====================== NAV ====================== -->
+  <header class="fixed top-0 inset-x-0 z-50 nav-glass border-b border-[#2b5a4c]/60">
+    <nav class="max-w-7xl mx-auto px-5 sm:px-8 h-16 md:h-20 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-2 group">
+        <span class="font-display text-2xl md:text-3xl font-medium tracking-[-0.04em] text-[#f4efea]">
+          Artemis<span class="text-[#c5a55e]">.</span>
+        </span>
+        <span class="hidden sm:block text-[10px] uppercase tracking-[0.3em] text-[#9fb0a4] pl-2 border-l border-[#2b5a4c]">
+          Emek &middot; Ankara
+        </span>
+      </a>
+
+      <ul class="hidden md:flex items-center gap-9 text-sm text-[#f4efea]/85">
+        <li><a href="index.html" class="hover:text-[#c5a55e] transition-colors">Anasayfa</a></li>
+        <li><a href="index.html#etkinlikler" class="hover:text-[#c5a55e] transition-colors">Atölyeler</a></li>
+        <li><a href="index.html#atmosfer" class="hover:text-[#c5a55e] transition-colors">Atmosfer</a></li>
+        <li><a href="index.html#menu" class="hover:text-[#c5a55e] transition-colors">Menü</a></li>
+        <li><a href="index.html#iletisim" class="hover:text-[#c5a55e] transition-colors">İletişim</a></li>
+      </ul>
+
+      <a href="index.html"
+         class="hidden md:inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-[#f4efea] border border-[#f4efea]/25 rounded-full hover:border-[#c5a55e] hover:text-[#c5a55e] transition-colors">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Anasayfa
+      </a>
+
+      <button id="menuToggle" class="md:hidden p-2 -mr-2 text-[#f4efea]" aria-label="Menüyü aç">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </nav>
+
+    <div id="mobileMenu" class="mobile-menu hidden-menu md:hidden border-t border-[#2b5a4c]/60 bg-[#123b30]/95">
+      <ul class="px-6 py-6 space-y-4 text-[#f4efea]/90">
+        <li><a href="index.html" class="block py-1">Anasayfa</a></li>
+        <li><a href="index.html#etkinlikler" class="block py-1">Atölyeler</a></li>
+        <li><a href="index.html#atmosfer" class="block py-1">Atmosfer</a></li>
+        <li><a href="index.html#menu" class="block py-1">Menü</a></li>
+        <li><a href="index.html#iletisim" class="block py-1">İletişim</a></li>
+      </ul>
+    </div>
+  </header>
+
+  <!-- ====================== PAGE HEADER ====================== -->
+  <section class="pt-28 md:pt-36 pb-10 md:pb-14 px-5 sm:px-8">
+    <div class="max-w-6xl mx-auto">
+      <a href="index.html" class="reveal inline-flex items-center gap-2 text-xs text-[#9fb0a4] hover:text-[#c5a55e] transition-colors mb-8">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Anasayfa'ya dön
+      </a>
+
+      <div class="reveal reveal-delay-1 flex items-center gap-3 mb-5">
+        <span class="h-px w-10 bg-[#c5a55e]"></span>
+        <span class="text-[11px] uppercase tracking-[0.4em] text-[#c5a55e]/90">Rezervasyon</span>
+      </div>
+
+      <h1 class="reveal reveal-delay-2 font-display font-light text-4xl sm:text-5xl md:text-6xl tracking-[-0.04em] text-[#f4efea] leading-[1.05]">
+        Atölye <em class="italic text-[#c5a55e]">bileti</em> al
+      </h1>
+
+      <p class="reveal reveal-delay-2 mt-5 text-[#f4efea]/70 max-w-2xl text-sm md:text-base leading-relaxed">
+        Atölyenizi seçin, kişi sayısını belirleyin ve birkaç adımda yerinizi ayırtın.
+        Onay ve ödeme bilgileri e-postanıza iletilir; ödemeniz SSL ile şifreli güvenli ödeme altyapısı üzerinden alınır.
+      </p>
+    </div>
+  </section>
+
+  <!-- ====================== BOOKING FORM ====================== -->
+  <section class="px-5 sm:px-8 pb-24 md:pb-32">
+    <div class="max-w-6xl mx-auto">
+      <form id="bookingForm" class="grid lg:grid-cols-3 gap-8 lg:gap-10" novalidate>
+
+        <!-- Left: Steps -->
+        <div class="lg:col-span-2 space-y-10 md:space-y-14">
+
+          <!-- Step 01: Workshop selection -->
+          <div class="reveal">
+            <div class="flex items-baseline gap-3 mb-6">
+              <span class="font-display text-2xl text-[#c5a55e]">01</span>
+              <h2 class="font-display text-xl md:text-2xl text-[#f4efea]">Atölye seçin</h2>
+            </div>
+
+            <div class="grid gap-3">
+              <!-- Workshop 1 -->
+              <label class="workshop-option block bg-[#16463a] border border-[#2b5a4c] rounded-2xl p-5 cursor-pointer"
+                     data-id="yagliboya" data-title="Yağlıboya Başlangıç Atölyesi" data-price="450">
+                <input type="radio" name="workshop" value="yagliboya" class="sr-only" />
+                <div class="flex items-start justify-between gap-4">
+                  <div class="flex-1 min-w-0">
+                    <div class="text-[11px] uppercase tracking-widest text-[#9fb0a4] mb-1">27 Mayıs 2026 &middot; Çarşamba 18:00</div>
+                    <h3 class="font-display text-lg md:text-xl text-[#f4efea] leading-snug">Yağlıboya Başlangıç Atölyesi</h3>
+                    <p class="text-sm text-[#f4efea]/60 mt-1.5">2 saat &middot; Eğitmen: Selin Aydın &middot; Tüm malzemeler dahildir</p>
+                    <div class="mt-3 flex items-center gap-2 text-xs text-[#9fb0a4]">
+                      <span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
+                      4 kontenjan kaldı
+                    </div>
+                  </div>
+                  <div class="text-right shrink-0">
+                    <div class="font-display text-2xl text-[#c5a55e]">₺450</div>
+                    <div class="text-[10px] uppercase tracking-widest text-[#9fb0a4] mt-1">Kişi başı</div>
+                  </div>
+                </div>
+              </label>
+
+              <!-- Workshop 2 -->
+              <label class="workshop-option block bg-[#16463a] border border-[#2b5a4c] rounded-2xl p-5 cursor-pointer"
+                     data-id="suluboya" data-title="Suluboya Manzara Workshop" data-price="400">
+                <input type="radio" name="workshop" value="suluboya" class="sr-only" />
+                <div class="flex items-start justify-between gap-4">
+                  <div class="flex-1 min-w-0">
+                    <div class="text-[11px] uppercase tracking-widest text-[#9fb0a4] mb-1">01 Haziran 2026 &middot; Pazartesi 19:00</div>
+                    <h3 class="font-display text-lg md:text-xl text-[#f4efea] leading-snug">Suluboya Manzara Workshop</h3>
+                    <p class="text-sm text-[#f4efea]/60 mt-1.5">2 saat &middot; Eğitmen: Deniz Tunç &middot; Kağıt, fırça ve boyalar dahil</p>
+                    <div class="mt-3 flex items-center gap-2 text-xs text-[#9fb0a4]">
+                      <span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
+                      6 kontenjan kaldı
+                    </div>
+                  </div>
+                  <div class="text-right shrink-0">
+                    <div class="font-display text-2xl text-[#c5a55e]">₺400</div>
+                    <div class="text-[10px] uppercase tracking-widest text-[#9fb0a4] mt-1">Kişi başı</div>
+                  </div>
+                </div>
+              </label>
+
+              <!-- Workshop 3 -->
+              <label class="workshop-option block bg-[#16463a] border border-[#2b5a4c] rounded-2xl p-5 cursor-pointer"
+                     data-id="karakalem" data-title="Karakalem Portre Çalıştayı" data-price="550">
+                <input type="radio" name="workshop" value="karakalem" class="sr-only" />
+                <div class="flex items-start justify-between gap-4">
+                  <div class="flex-1 min-w-0">
+                    <div class="text-[11px] uppercase tracking-widest text-[#9fb0a4] mb-1">08 Haziran 2026 &middot; Pazartesi 19:00</div>
+                    <h3 class="font-display text-lg md:text-xl text-[#f4efea] leading-snug">Karakalem Portre Çalıştayı</h3>
+                    <p class="text-sm text-[#f4efea]/60 mt-1.5">2 saat &middot; Eğitmen: Kerem Yılmaz &middot; Küçük grup, kişiye özel geri bildirim</p>
+                    <div class="mt-3 flex items-center gap-2 text-xs text-[#9fb0a4]">
+                      <span class="inline-block w-2 h-2 rounded-full bg-amber-400"></span>
+                      Son 2 kontenjan
+                    </div>
+                  </div>
+                  <div class="text-right shrink-0">
+                    <div class="font-display text-2xl text-[#c5a55e]">₺550</div>
+                    <div class="text-[10px] uppercase tracking-widest text-[#9fb0a4] mt-1">Kişi başı</div>
+                  </div>
+                </div>
+              </label>
+
+              <!-- Workshop 4 -->
+              <label class="workshop-option block bg-[#16463a] border border-[#2b5a4c] rounded-2xl p-5 cursor-pointer"
+                     data-id="seramik" data-title="Seramik Atölyesi" data-price="600">
+                <input type="radio" name="workshop" value="seramik" class="sr-only" />
+                <div class="flex items-start justify-between gap-4">
+                  <div class="flex-1 min-w-0">
+                    <div class="text-[11px] uppercase tracking-widest text-[#9fb0a4] mb-1">15 Haziran 2026 &middot; Pazartesi 18:30</div>
+                    <h3 class="font-display text-lg md:text-xl text-[#f4efea] leading-snug">Seramik Şekillendirme Atölyesi</h3>
+                    <p class="text-sm text-[#f4efea]/60 mt-1.5">2.5 saat &middot; Eğitmen: Aslı Kaya &middot; Pişirim sonrası teslimat dahil</p>
+                    <div class="mt-3 flex items-center gap-2 text-xs text-[#9fb0a4]">
+                      <span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
+                      5 kontenjan kaldı
+                    </div>
+                  </div>
+                  <div class="text-right shrink-0">
+                    <div class="font-display text-2xl text-[#c5a55e]">₺600</div>
+                    <div class="text-[10px] uppercase tracking-widest text-[#9fb0a4] mt-1">Kişi başı</div>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Step 02: Quantity -->
+          <div class="reveal">
+            <div class="flex items-baseline gap-3 mb-6">
+              <span class="font-display text-2xl text-[#c5a55e]">02</span>
+              <h2 class="font-display text-xl md:text-2xl text-[#f4efea]">Kişi sayısı</h2>
+            </div>
+            <div class="flex items-center gap-3">
+              <button type="button" id="qtyMinus" class="qty-btn" aria-label="Azalt">&minus;</button>
+              <div class="w-16 text-center font-display text-2xl text-[#f4efea]" id="qtyDisplay">1</div>
+              <button type="button" id="qtyPlus" class="qty-btn" aria-label="Arttır">+</button>
+              <input type="hidden" id="qtyInput" name="quantity" value="1" />
+            </div>
+            <p class="mt-3 text-xs text-[#9fb0a4]">Maksimum 6 kişi. Daha büyük gruplar için <a href="https://wa.me/905555555555" class="text-[#c5a55e] hover:underline">WhatsApp'tan</a> iletişime geçin.</p>
+          </div>
+
+          <!-- Step 03: Customer info -->
+          <div class="reveal">
+            <div class="flex items-baseline gap-3 mb-6">
+              <span class="font-display text-2xl text-[#c5a55e]">03</span>
+              <h2 class="font-display text-xl md:text-2xl text-[#f4efea]">Bilgileriniz</h2>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-4">
+              <label class="block">
+                <div class="text-xs uppercase tracking-widest text-[#9fb0a4] mb-2">Ad Soyad</div>
+                <input type="text" name="name" required autocomplete="name" placeholder="Adınız Soyadınız" class="field-input" />
+              </label>
+              <label class="block">
+                <div class="text-xs uppercase tracking-widest text-[#9fb0a4] mb-2">E-posta</div>
+                <input type="email" name="email" required autocomplete="email" placeholder="ornek@email.com" class="field-input" />
+              </label>
+              <label class="block sm:col-span-2">
+                <div class="text-xs uppercase tracking-widest text-[#9fb0a4] mb-2">Telefon</div>
+                <input type="tel" name="phone" required autocomplete="tel" placeholder="+90 5XX XXX XX XX" class="field-input" />
+              </label>
+              <label class="block sm:col-span-2">
+                <div class="text-xs uppercase tracking-widest text-[#9fb0a4] mb-2">Not <span class="normal-case tracking-normal text-[#9fb0a4]/70">(opsiyonel)</span></div>
+                <textarea name="notes" rows="3" placeholder="Alerjiler, özel istekler veya sorularınız..." class="field-input resize-none"></textarea>
+              </label>
+            </div>
+          </div>
+
+          <!-- Step 04: Payment -->
+          <div class="reveal">
+            <div class="flex items-baseline gap-3 mb-6">
+              <span class="font-display text-2xl text-[#c5a55e]">04</span>
+              <h2 class="font-display text-xl md:text-2xl text-[#f4efea]">Ödeme yöntemi</h2>
+            </div>
+
+            <div class="grid sm:grid-cols-3 gap-3">
+              <label class="payment-option block bg-[#16463a] border border-[#2b5a4c] rounded-xl p-4 cursor-pointer text-center">
+                <input type="radio" name="payment" value="card" checked class="sr-only" />
+                <svg class="mx-auto mb-2 text-[#c5a55e]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>
+                <div class="text-sm text-[#f4efea]">Kredi / Banka Kartı</div>
+                <div class="text-[10px] uppercase tracking-widest text-[#9fb0a4] mt-1">Anında onay</div>
+              </label>
+
+              <label class="payment-option block bg-[#16463a] border border-[#2b5a4c] rounded-xl p-4 cursor-pointer text-center">
+                <input type="radio" name="payment" value="bank" class="sr-only" />
+                <svg class="mx-auto mb-2 text-[#c5a55e]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10l7-5 7 5v11M9 21v-6h6v6"/></svg>
+                <div class="text-sm text-[#f4efea]">Havale / EFT</div>
+                <div class="text-[10px] uppercase tracking-widest text-[#9fb0a4] mt-1">24 saat içinde</div>
+              </label>
+
+              <label class="payment-option block bg-[#16463a] border border-[#2b5a4c] rounded-xl p-4 cursor-pointer text-center">
+                <input type="radio" name="payment" value="onsite" class="sr-only" />
+                <svg class="mx-auto mb-2 text-[#c5a55e]" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18M3 7l2-3h14l2 3M5 7v13a1 1 0 001 1h12a1 1 0 001-1V7"/><circle cx="12" cy="14" r="2"/></svg>
+                <div class="text-sm text-[#f4efea]">Mekânda Ödeme</div>
+                <div class="text-[10px] uppercase tracking-widest text-[#9fb0a4] mt-1">Atölye günü</div>
+              </label>
+            </div>
+
+            <p class="mt-4 text-xs text-[#9fb0a4] leading-relaxed">
+              Kart ödemeleri güvenli ödeme altyapısı üzerinden (Iyzico / PayTR entegrasyonuna hazır) SSL şifreleme ile alınır.
+              Mekânda ödeme seçeneğinde rezervasyon kontenjan onayı sonrasında geçerlidir.
+            </p>
+          </div>
+
+          <!-- KVKK consent -->
+          <label class="reveal flex items-start gap-3 text-sm text-[#f4efea]/75 cursor-pointer">
+            <input type="checkbox" name="consent" required class="mt-1 w-4 h-4 accent-[#c5a55e]" />
+            <span>
+              <a href="#" class="text-[#c5a55e] hover:underline">KVKK aydınlatma metnini</a> ve
+              <a href="#" class="text-[#c5a55e] hover:underline">kullanım koşullarını</a> okudum, kabul ediyorum.
+            </span>
+          </label>
+
+        </div>
+
+        <!-- Right: Sticky summary -->
+        <aside class="lg:col-span-1">
+          <div class="lg:sticky lg:top-28 reveal">
+            <div class="bg-[#16463a] border border-[#2b5a4c] rounded-2xl p-6">
+              <div class="flex items-center gap-3 mb-5">
+                <span class="h-px w-6 bg-[#c5a55e]"></span>
+                <span class="text-[10px] uppercase tracking-[0.4em] text-[#c5a55e]/90">Özet</span>
+              </div>
+              <h3 class="font-display text-xl text-[#f4efea] mb-5">Sipariş özeti</h3>
+
+              <div id="summaryEmpty" class="text-sm text-[#9fb0a4] py-6 text-center border border-dashed border-[#2b5a4c] rounded-xl">
+                Devam etmek için<br />bir atölye seçin
+              </div>
+
+              <div id="summaryContent" class="hidden space-y-4 text-sm">
+                <div>
+                  <div class="text-[10px] uppercase tracking-widest text-[#9fb0a4] mb-1">Atölye</div>
+                  <div id="summaryWorkshop" class="text-[#f4efea] font-medium leading-snug">—</div>
+                  <div id="summaryDate" class="text-xs text-[#9fb0a4] mt-1">—</div>
+                </div>
+
+                <div class="h-px bg-[#2b5a4c]"></div>
+
+                <div class="flex justify-between text-[#f4efea]/85">
+                  <span>Birim fiyat</span>
+                  <span id="summaryUnitPrice">—</span>
+                </div>
+                <div class="flex justify-between text-[#f4efea]/85">
+                  <span>Kişi sayısı</span>
+                  <span>× <span id="summaryQty">1</span></span>
+                </div>
+
+                <div class="h-px bg-[#2b5a4c]"></div>
+
+                <div class="flex justify-between items-baseline pt-1">
+                  <span class="text-[10px] uppercase tracking-widest text-[#9fb0a4]">Toplam</span>
+                  <span id="summaryTotal" class="font-display text-3xl text-[#c5a55e]">₺0</span>
+                </div>
+              </div>
+
+              <button type="submit" id="submitBtn"
+                      class="w-full mt-6 px-6 py-4 bg-[#c5a55e] text-[#123b30] font-medium rounded-full hover:bg-[#d8bd7a] transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#c5a55e]"
+                      disabled>
+                Ödemeye geç
+              </button>
+
+              <div class="mt-5 pt-5 border-t border-[#2b5a4c] space-y-2">
+                <div class="flex items-center gap-2 text-xs text-[#9fb0a4]">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                  SSL şifreli güvenli ödeme
+                </div>
+                <div class="flex items-center gap-2 text-xs text-[#9fb0a4]">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14l-3-3"/></svg>
+                  İptal ücretsiz, 24 saat öncesine kadar
+                </div>
+                <div class="text-xs text-[#9fb0a4] pt-2">
+                  Yardım: <a href="tel:+903121234567" class="text-[#c5a55e] hover:underline">+90 312 123 45 67</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+      </form>
+    </div>
+  </section>
+
+  <!-- ====================== FOOTER ====================== -->
+  <footer class="px-5 sm:px-8 py-10 border-t border-[#2b5a4c]/60">
+    <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-xs text-[#9fb0a4]">
+      <p>&copy; <span id="year"></span> Artemis Cafe. Tüm hakları saklıdır.</p>
+      <div class="flex items-center gap-6">
+        <a href="index.html" class="hover:text-[#c5a55e] transition-colors">Anasayfa</a>
+        <a href="index.html#etkinlikler" class="hover:text-[#c5a55e] transition-colors">Atölyeler</a>
+        <a href="index.html#iletisim" class="hover:text-[#c5a55e] transition-colors">İletişim</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Scripts -->
+  <script>
+    // Year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Reveal animations
+    const reveals = document.querySelectorAll('.reveal');
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+      reveals.forEach((el) => io.observe(el));
+    } else {
+      reveals.forEach((el) => el.classList.add('in-view'));
+    }
+
+    // Mobile menu
+    const menuToggle = document.getElementById('menuToggle');
+    const mobileMenu = document.getElementById('mobileMenu');
+    menuToggle.addEventListener('click', () => mobileMenu.classList.toggle('hidden-menu'));
+    mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mobileMenu.classList.add('hidden-menu')));
+
+    // ========== BOOKING LOGIC ==========
+    const workshopInputs = document.querySelectorAll('input[name="workshop"]');
+    const qtyDisplay = document.getElementById('qtyDisplay');
+    const qtyInput = document.getElementById('qtyInput');
+    const qtyMinus = document.getElementById('qtyMinus');
+    const qtyPlus = document.getElementById('qtyPlus');
+
+    const summaryEmpty = document.getElementById('summaryEmpty');
+    const summaryContent = document.getElementById('summaryContent');
+    const summaryWorkshop = document.getElementById('summaryWorkshop');
+    const summaryDate = document.getElementById('summaryDate');
+    const summaryUnitPrice = document.getElementById('summaryUnitPrice');
+    const summaryQty = document.getElementById('summaryQty');
+    const summaryTotal = document.getElementById('summaryTotal');
+    const submitBtn = document.getElementById('submitBtn');
+
+    const MIN_QTY = 1;
+    const MAX_QTY = 6;
+
+    const fmtTL = (n) => '₺' + n.toLocaleString('tr-TR');
+
+    function getQty() { return parseInt(qtyInput.value, 10) || 1; }
+    function setQty(n) {
+      const clamped = Math.max(MIN_QTY, Math.min(MAX_QTY, n));
+      qtyInput.value = clamped;
+      qtyDisplay.textContent = clamped;
+      qtyMinus.disabled = clamped <= MIN_QTY;
+      qtyPlus.disabled = clamped >= MAX_QTY;
+      updateSummary();
+    }
+
+    function getSelected() {
+      const checked = document.querySelector('input[name="workshop"]:checked');
+      if (!checked) return null;
+      const label = checked.closest('label');
+      return {
+        id: label.dataset.id,
+        title: label.dataset.title,
+        price: parseInt(label.dataset.price, 10),
+        date: label.querySelector('.uppercase').textContent.trim()
+      };
+    }
+
+    function updateSummary() {
+      const sel = getSelected();
+      const qty = getQty();
+
+      if (!sel) {
+        summaryEmpty.classList.remove('hidden');
+        summaryContent.classList.add('hidden');
+        submitBtn.disabled = true;
+        return;
+      }
+
+      summaryEmpty.classList.add('hidden');
+      summaryContent.classList.remove('hidden');
+
+      summaryWorkshop.textContent = sel.title;
+      summaryDate.textContent = sel.date;
+      summaryUnitPrice.textContent = fmtTL(sel.price);
+      summaryQty.textContent = qty;
+      summaryTotal.textContent = fmtTL(sel.price * qty);
+
+      submitBtn.disabled = false;
+    }
+
+    workshopInputs.forEach(input => input.addEventListener('change', updateSummary));
+    qtyMinus.addEventListener('click', () => setQty(getQty() - 1));
+    qtyPlus.addEventListener('click', () => setQty(getQty() + 1));
+    setQty(1); // init
+
+    // Toast helper
+    const toast = document.getElementById('toast');
+    let toastTimer = null;
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 5000);
+    }
+
+    // Form submission - placeholder for backend integration
+    document.getElementById('bookingForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const sel = getSelected();
+      if (!sel) {
+        showToast('Lütfen bir atölye seçin.');
+        return;
+      }
+
+      const form = e.target;
+      // Basic native validation
+      if (!form.reportValidity()) return;
+
+      const payload = {
+        workshop: sel.id,
+        workshopTitle: sel.title,
+        date: sel.date,
+        quantity: getQty(),
+        unitPrice: sel.price,
+        total: sel.price * getQty(),
+        name: form.name.value.trim(),
+        email: form.email.value.trim(),
+        phone: form.phone.value.trim(),
+        notes: form.notes.value.trim(),
+        payment: form.payment.value,
+        consent: form.consent.checked,
+        timestamp: new Date().toISOString()
+      };
+
+      // =====================================================
+      // ÖDEME ENTEGRASYONU BURAYA GELECEK
+      // -----------------------------------------------------
+      // Burası şu an demo: payload'u console'a yazıyor ve
+      // kullanıcıya onay mesajı gösteriyor.
+      //
+      // GERÇEK ENTEGRASYON için seçenekler:
+      //
+      // 1) Iyzico (Türkiye): https://iyzico.com
+      //    - Backend (Node/PHP/Python) gerekir
+      //    - POST /api/checkout-form → iyzico token döndür
+      //    - Bu sayfada Iyzico'nun checkout form'unu render et
+      //
+      // 2) PayTR: https://www.paytr.com
+      //    - Backend ile token oluştur
+      //    - iframe ile ödeme sayfasını aç
+      //
+      // 3) Stripe Checkout (uluslararası):
+      //    - Backend ile session oluştur
+      //    - window.location = session.url
+      //
+      // 4) Basit form gönderimi (ödemesiz):
+      //    - Formspree / Web3Forms / kendi API'niz
+      //    - fetch('/api/booking', { method:'POST', body: JSON.stringify(payload) })
+      //
+      // Aşağıdaki örnek bir fetch() iskeletidir:
+      //
+      // fetch('/api/booking', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(payload)
+      // })
+      // .then(r => r.json())
+      // .then(data => {
+      //   if (data.paymentUrl) window.location = data.paymentUrl;
+      //   else showToast('Rezervasyon alındı, onay e-postası gönderildi.');
+      // })
+      // .catch(err => showToast('Bir hata oluştu, lütfen tekrar deneyin.'));
+      // =====================================================
+
+      console.log('[BOOKING PAYLOAD]', payload);
+
+      const paymentLabels = { card: 'Kart', bank: 'Havale/EFT', onsite: 'Mekânda ödeme' };
+      showToast(`Talebiniz alındı! ${paymentLabels[payload.payment]} ile ${fmtTL(payload.total)} işlemi için size dönüş yapılacak.`);
+
+      // Reset (gerçek entegrasyonda burası backend yanıtına göre yönlendirir)
+      setTimeout(() => {
+        form.reset();
+        workshopInputs.forEach(i => i.checked = false);
+        setQty(1);
+        updateSummary();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 1500);
+    });
+  </script>
+</body>
+</html>
