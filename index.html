@@ -219,6 +219,27 @@
     @supports (height: 100dvh) {
       #hero { min-height: 100dvh; }
     }
+
+    /* === MOBİL SAĞA TAŞMA / YATAY OVERFLOW DÜZELTMESİ === */
+    html, body { overflow-x: hidden; width: 100%; position: relative; }
+    img, div, section, form, input { max-width: 100vw; box-sizing: border-box; }
+    /* Marquee bant istisnası — sonsuz kaydırma için viewport sınırını aşması gerekir */
+    .marquee { max-width: none !important; }
+
+    /* === MOBİL HERO BÖLÜMÜ KÜÇÜLTMESİ === */
+    @media (max-width: 768px) {
+      #hero { min-height: auto !important; }
+      #hero > div.relative.z-10 {
+        padding-top: 5.5rem !important;
+        padding-bottom: 3rem !important;
+      }
+    }
+
+    /* === MOBİL MENÜ HEADER BLUR BUG DÜZELTMESİ === */
+    /* Gizli mobil menü, header içinde ~300px dikey yer kaplayıp nav-glass blur efektini taşırıyordu.
+       max-height: 0 ile gizli halde tamamen kapanıyor, açıldığında düzgünce genişliyor. */
+    .mobile-menu { overflow: hidden; max-height: 600px; transition: transform 480ms cubic-bezier(.22,.61,.36,1), opacity 320ms ease, max-height 380ms cubic-bezier(.22,.61,.36,1); }
+    .mobile-menu.hidden-menu { max-height: 0; }
   </style>
 </head>
 <body class="grain vignette antialiased">

@@ -145,6 +145,16 @@
     @media (prefers-reduced-motion: reduce) {
       .reveal { opacity:1; transform:none; transition:none; }
     }
+
+    /* === MOBİL SAĞA TAŞMA / YATAY OVERFLOW DÜZELTMESİ === */
+    html, body { overflow-x: hidden; width: 100%; position: relative; }
+    img, div, section, form, input { max-width: 100vw; box-sizing: border-box; }
+
+    /* === MOBİL MENÜ HEADER BLUR BUG DÜZELTMESİ === */
+    /* Gizli mobil menü, header içinde ~300px dikey yer kaplayıp nav-glass blur efektini taşırıyordu.
+       max-height: 0 ile gizli halde tamamen kapanıyor, açıldığında düzgünce genişliyor. */
+    .mobile-menu { overflow: hidden; max-height: 600px; transition: transform 480ms cubic-bezier(.22,.61,.36,1), opacity 320ms ease, max-height 380ms cubic-bezier(.22,.61,.36,1); }
+    .mobile-menu.hidden-menu { max-height: 0; }
   </style>
 </head>
 <body class="grain vignette antialiased">
